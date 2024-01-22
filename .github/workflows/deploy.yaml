@@ -1,0 +1,63 @@
+name:  Deploy Auto Service
+on:
+  push:
+    branches:
+      - develop
+
+env:
+  GITHUB_ORG: "mkdir-tom"
+  DOCKER_ORG: "436897321626.dkr.ecr.ap-southeast-1.amazonaws.com"
+  IMG_NAME: "web-service"
+  IMG_TAG: ${{ github.sha }}
+  INFRA_REPO: "infrastructure"
+
+jobs:
+  # Set the job key. The key is displayed as the job name
+  # when a job name is not provided
+  build:
+    # Set the type of machine to run on
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.ref }}
+
+    steps:
+      # Checks out a copy of your repository on the ubuntu-latest machine
+      - uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+          aws-secret-access-key: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+          aws-region: ap-southeast-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+      - name: Build, tag, and push the image to Amazon ECR
+        run: |
+          docker build -t ${{ env.DOCKER_ORG }}/${{ env.IMG_NAME }}:${{ env.IMG_TAG }} --build-arg BRANCH_NAME=${GITHUB_REF##*/} .
+          echo "Pushing image to ECR..."
+          docker push ${{ env.DOCKER_ORG }}/${{ env.IMG_NAME }}:${{ env.IMG_TAG }}
+
+  deploy:
+    needs: [ build ]
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone Infrastructure
+        run: |
+          echo Clone From https://${{ env.GITHUB_ORG }}:${{ secrets.GH_TOKEN }}@github.com/${{ env.GITHUB_ORG }}/${{ env.INFRA_REPO }}.git
+          git clone https://${{ env.GITHUB_ORG }}:${{ secrets.GH_TOKEN }}@github.com/${{ env.GITHUB_ORG }}/${{ env.INFRA_REPO }}.git -b main
+
+      - name: Replace Deployment Image Version
+        run: |
+          cd ${{ env.INFRA_REPO }}/kubernetes/${GITHUB_REF#refs/heads/}/deployments/${{ env.IMG_NAME }}
+          git config --global user.email ${{ secrets.USER_EMAIL }}
+          git config --global user.name "Circle CI"
+          cp values-temp.yaml values.yaml
+          echo -e "\n\nAppVersion: ${{ env.IMG_TAG }}" >> values.yaml
+          git add -A
+          git commit -m "Changing Image Version of ${{ env.DOCKER_ORG }}/${{ env.IMG_TAG}}:${{ env.IMG_TAG }}"
+          git push -u origin main
