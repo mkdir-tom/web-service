@@ -55,7 +55,7 @@ jobs:
         run: |
           cd ${{ env.INFRA_REPO }}/kubernetes/${GITHUB_REF#refs/heads/}/deployments/${{ env.IMG_NAME }}
           git config --global user.email ${{ secrets.USER_EMAIL }}
-          git config --global user.name "Circle CI"
+          git config --global user.name "shinpeiz"
           cp values-temp.yaml values.yaml
           echo -e "\n\nAppVersion: ${{ env.IMG_TAG }}" >> values.yaml
           git add -A
