@@ -1,7 +1,7 @@
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { INestApplication } from '@nestjs/common'
 
-export const createSwaggerDocument = (app: INestApplication): void => {
+export const setupSwagger = (app: INestApplication): void => {
   const configOpenApi = new DocumentBuilder()
     .setTitle('web api anime example')
     .setDescription('The Anime API description')

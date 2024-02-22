@@ -1,6 +1,5 @@
 import { Injectable, ConsoleLogger } from '@nestjs/common'
 import dayjs from 'dayjs'
-import chalk from 'chalk'
 import * as winston from 'winston'
 import WinstonCloudwatch from 'winston-cloudwatch'
 import { SERVICE_NAME } from '../../constants'
@@ -8,7 +7,7 @@ import { SERVICE_NAME } from '../../constants'
 const formatter = (info) => {
   return `${dayjs(info.timestamp).format('YYYY/MM/DD - hh:mm:ss.SSS A')} [${
     info.level
-  }] [${chalk.green(info.context)}] ${info.message}`
+  }] [${info.context}] ${info.message}`
 }
 
 const cloudWatchFormatter = (info) => {
