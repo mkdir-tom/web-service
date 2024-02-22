@@ -34,7 +34,7 @@ jobs:
       - name: Build Image and Push to Docker Hub
         uses: docker/build-push-action@v4
         with:
-          context: DockerFileFolder/
+          context: /
           push: true
           tags: ${{ env.DOCKER_ORG }}/${{ env.IMG_NAME }}:${{ env.IMG_TAG }}
 
